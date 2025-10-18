@@ -1,4 +1,4 @@
-#Interactive Friendship Network MERN App
+#Interactive User Relationship & Hobby Network
 
 #Project Description
 
