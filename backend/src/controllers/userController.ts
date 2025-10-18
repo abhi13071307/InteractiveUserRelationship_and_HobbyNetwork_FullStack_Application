@@ -1,9 +1,8 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import User from "../models/User";
-import { computePopularityForUser } from "../services/popularity";
+import { updatePopularityForUser, updatePopularityForUsers } from "../services/popularity";
 
-//Create user
 export const createUser = async (req: Request, res: Response) => {
   try {
     const { username, age, hobbies, friends } = req.body;
@@ -26,18 +25,16 @@ export const createUser = async (req: Request, res: Response) => {
 
     await user.save();
 
-    const popularityScore = await computePopularityForUser(user);
-    user.popularityScore = popularityScore;
-    await user.save();
+    await updatePopularityForUser(user._id);
+    const fresh = await User.findById(user._id);
 
-    return res.status(201).json({ message: "User created", user });
+    return res.status(201).json({ message: "User created", user: fresh });
   } catch (error: any) {
     console.error("createUser error:", error);
     return res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };
 
-//GET /api/users
 export const getAllUsers = async (_req: Request, res: Response) => {
   try {
     const users = await User.find().lean();
@@ -48,7 +45,6 @@ export const getAllUsers = async (_req: Request, res: Response) => {
   }
 };
 
-//POST /api/users/:id/link
 export const linkUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -63,31 +59,34 @@ export const linkUser = async (req: Request, res: Response) => {
     const friend = await User.findById(friendId);
     if (!user || !friend) return res.status(404).json({ message: "User or friend not found" });
 
-    const alreadyLinked = user.friends.some((f) => f.equals(friend._id)) || friend.friends.some((f) => f.equals(user._id));
+    const alreadyLinked =
+      user.friends.some((f) => f.equals(friend._id)) || friend.friends.some((f) => f.equals(user._id));
     if (alreadyLinked) {
       return res.status(409).json({ message: "Users are already linked (friendship exists)" });
     }
 
-//Add mutual connection
     user.friends.push(friend._id);
     friend.friends.push(user._id);
 
     await user.save();
     await friend.save();
 
-    user.popularityScore = await computePopularityForUser(user);
-    friend.popularityScore = await computePopularityForUser(friend);
-    await user.save();
-    await friend.save();
+    await updatePopularityForUsers([user._id, friend._id]);
 
-    return res.status(200).json({ message: "Users linked (mutual friendship created)", user, friend });
+    const updatedUser = await User.findById(user._id);
+    const updatedFriend = await User.findById(friend._id);
+
+    return res.status(200).json({
+      message: "Users linked (mutual friendship created)",
+      user: updatedUser,
+      friend: updatedFriend,
+    });
   } catch (error: any) {
     console.error("linkUser error:", error);
     return res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };
 
-//DELETE /api/users/:id/unlink
 export const unlinkUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -102,7 +101,8 @@ export const unlinkUser = async (req: Request, res: Response) => {
     const friend = await User.findById(friendId);
     if (!user || !friend) return res.status(404).json({ message: "User or friend not found" });
 
-    const wasLinked = user.friends.some((f) => f.equals(friend._id)) && friend.friends.some((f) => f.equals(user._id));
+    const wasLinked =
+      user.friends.some((f) => f.equals(friend._id)) && friend.friends.some((f) => f.equals(user._id));
     if (!wasLinked) {
       return res.status(409).json({ message: "Users are not linked" });
     }
@@ -113,19 +113,65 @@ export const unlinkUser = async (req: Request, res: Response) => {
     await user.save();
     await friend.save();
 
-    user.popularityScore = await computePopularityForUser(user);
-    friend.popularityScore = await computePopularityForUser(friend);
-    await user.save();
-    await friend.save();
+    await updatePopularityForUsers([user._id, friend._id]);
 
-    return res.status(200).json({ message: "Users unlinked (friendship removed)", user, friend });
+    const updatedUser = await User.findById(user._id);
+    const updatedFriend = await User.findById(friend._id);
+
+    return res.status(200).json({
+      message: "Users unlinked (friendship removed)",
+      user: updatedUser,
+      friend: updatedFriend,
+    });
   } catch (error: any) {
     console.error("unlinkUser error:", error);
     return res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };
 
-//DELETE /api/users/:id
+export const updateUser = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { username, age, hobbies } = req.body;
+
+    if (!mongoose.isValidObjectId(id)) return res.status(400).json({ message: "Invalid user id" });
+
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (username !== undefined) {
+      if (typeof username !== "string" || username.trim() === "") {
+        return res.status(400).json({ message: "username must be a non-empty string" });
+      }
+      user.username = username.trim();
+    }
+
+    if (age !== undefined) {
+      if (typeof age !== "number" || age < 0) {
+        return res.status(400).json({ message: "age must be a non-negative number" });
+      }
+      user.age = age;
+    }
+
+    if (hobbies !== undefined) {
+      if (!Array.isArray(hobbies)) {
+        return res.status(400).json({ message: "hobbies must be an array of strings" });
+      }
+      user.hobbies = hobbies;
+    }
+
+    await user.save();
+
+    await updatePopularityForUser(user._id);
+    const updated = await User.findById(user._id);
+
+    return res.status(200).json({ message: "User updated", user: updated });
+  } catch (error: any) {
+    console.error("updateUser error:", error);
+    return res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
+};
+
 export const deleteUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;

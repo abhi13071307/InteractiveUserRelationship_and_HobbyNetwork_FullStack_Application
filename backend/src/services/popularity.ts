@@ -1,30 +1,42 @@
-import User, { IUser } from "../models/User";
 import mongoose from "mongoose";
+import User from "../models/User";
 
-//Compute popularity score:
- //popularityScore = number of unique friends + (total hobbies shared with friends * 0.5)
-export const computePopularityForUser = async (user: IUser | mongoose.Types.ObjectId) => {
-  const userDoc = (user instanceof mongoose.Types.ObjectId) ? await User.findById(user) : user;
-  if (!userDoc) throw new Error("User not found while computing popularity");
+export const computePopularityForUserId = async (userId: string | mongoose.Types.ObjectId) => {
+  const uid = typeof userId === "string" ? new mongoose.Types.ObjectId(userId) : userId;
+  const user = await User.findById(uid).lean();
+  if (!user) return 0;
 
-  const friendIds = userDoc.friends ?? [];
-  const uniqueFriendsCount = friendIds.length;
+  const friendIds = (user.friends || []).map((f: any) => f.toString());
+  const uniqueFriendsCount = new Set(friendIds).size;
 
-  if (uniqueFriendsCount === 0) {
-    return uniqueFriendsCount; 
-  }
+  if (uniqueFriendsCount === 0) return 0;
 
-  const friends = await User.find({ _id: { $in: friendIds } }).select("hobbies");
+  const friends = await User.find({ _id: { $in: friendIds } }).select("hobbies").lean();
+  const userHobbySet = new Set((user.hobbies || []).map((h: string) => h.toLowerCase()));
+
   let totalSharedHobbies = 0;
-
-  const userHobbiesSet = new Set((userDoc.hobbies || []).map(h => h.toLowerCase()));
-
   for (const f of friends) {
-    const friendHobbies = (f.hobbies || []).map(h => h.toLowerCase());
-    const shared = friendHobbies.filter(h => userHobbiesSet.has(h)).length;
+    const friendHobbies = (f.hobbies || []).map((h: string) => h.toLowerCase());
+    const shared = friendHobbies.filter((h) => userHobbySet.has(h)).length;
     totalSharedHobbies += shared;
   }
 
   const score = uniqueFriendsCount + totalSharedHobbies * 0.5;
   return Math.round(score * 100) / 100;
+};
+
+export const updatePopularityForUser = async (userId: string | mongoose.Types.ObjectId) => {
+  const score = await computePopularityForUserId(userId);
+  await User.findByIdAndUpdate(userId, { popularityScore: score }, { new: true });
+  return score;
+};
+
+export const updatePopularityForUsers = async (userIds: Array<string | mongoose.Types.ObjectId>) => {
+  const unique = Array.from(new Set(userIds.map((id) => id.toString())));
+  const results: { id: string; score: number }[] = [];
+  for (const id of unique) {
+    const s = await updatePopularityForUser(id);
+    results.push({ id: id.toString(), score: s });
+  }
+  return results;
 };

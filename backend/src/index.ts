@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import connectDB from "./config/db";
 import userRoutes from "./routes/userRoutes";
 import graphRoutes from "./routes/graphRoutes";
+import hobbyRoutes from "./routes/hobbyRoutes";
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.use(express.json());
 app.use("/api/users", userRoutes);
 app.use("/api/graph", graphRoutes);
 app.get("/api/health", (_, res) => res.json({ status: "ok", time: new Date() }));
+app.use("/api/users", hobbyRoutes); // this makes PUT /api/users/:id/hobby work
 
 const start = async () => {
   await connectDB(process.env.MONGO_URI); 
