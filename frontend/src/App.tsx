@@ -8,6 +8,10 @@ import UserPanel from "./UserPanel";
 import CreateUserPanel from "./CreateUserPanel";
 import "./styles.css";
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
+const res = await axios.get(`${API_BASE}/api/users`);
+
+
 const UserNodeBase: React.FC<NodeProps & { variant?: "high" | "low" }> = ({ id, data }) => {
   const [dragOver, setDragOver] = React.useState(false);
   const tier: "high" | "low" = data?.tier === "high" ? "high" : "low";
