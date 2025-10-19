@@ -1,12 +1,8 @@
-// backend/src/controllers/hobbyController.ts
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import User from "../models/User";
 import { updatePopularityForUsers } from "../services/popularity";
 
-/**
- * Add a hobby to a user and update popularity scores
- */
 export const addHobbyToUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -30,8 +26,6 @@ export const addHobbyToUser = async (req: Request, res: Response) => {
 
     user.hobbies.push(hobby.trim());
     await user.save();
-
-    // Update popularity for this user and all their friends (pass string ids)
     const friendsAsStrings = (user.friends || []).map((f: any) => String(f)).filter(Boolean);
     const toUpdate = [String(user._id), ...friendsAsStrings];
     await updatePopularityForUsers(toUpdate);
@@ -44,9 +38,6 @@ export const addHobbyToUser = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Remove a hobby from a user and update popularity scores
- */
 export const removeHobbyFromUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -71,7 +62,6 @@ export const removeHobbyFromUser = async (req: Request, res: Response) => {
 
     await user.save();
 
-    // Update popularity for this user and their friends
     const friendsAsStrings = (user.friends || []).map((f: any) => String(f)).filter(Boolean);
     const toUpdate = [String(user._id), ...friendsAsStrings];
     await updatePopularityForUsers(toUpdate);
