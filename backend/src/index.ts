@@ -17,7 +17,7 @@ process.on("unhandledRejection", (err) => {
 });
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: true }));
 app.use(express.json());
 
 app.use("/api/users", userRoutes);
