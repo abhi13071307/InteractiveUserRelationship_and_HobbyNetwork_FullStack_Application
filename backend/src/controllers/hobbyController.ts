@@ -1,8 +1,12 @@
+// backend/src/controllers/hobbyController.ts
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import User from "../models/User";
 import { updatePopularityForUsers } from "../services/popularity";
 
+/**
+ * Add a hobby to a user and update popularity scores
+ */
 export const addHobbyToUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -19,7 +23,7 @@ export const addHobbyToUser = async (req: Request, res: Response) => {
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const normalized = hobby.trim().toLowerCase();
-    const existing = (user.hobbies || []).map((h) => h.toLowerCase());
+    const existing = (user.hobbies || []).map((h) => (typeof h === "string" ? h.toLowerCase() : h));
     if (existing.includes(normalized)) {
       return res.status(409).json({ message: "User already has this hobby" });
     }
@@ -27,7 +31,9 @@ export const addHobbyToUser = async (req: Request, res: Response) => {
     user.hobbies.push(hobby.trim());
     await user.save();
 
-    const toUpdate = [user._id, ...(user.friends || [])];
+    // Update popularity for this user and all their friends (pass string ids)
+    const friendsAsStrings = (user.friends || []).map((f: any) => String(f)).filter(Boolean);
+    const toUpdate = [String(user._id), ...friendsAsStrings];
     await updatePopularityForUsers(toUpdate);
 
     const updated = await User.findById(user._id);
@@ -38,6 +44,9 @@ export const addHobbyToUser = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Remove a hobby from a user and update popularity scores
+ */
 export const removeHobbyFromUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -54,7 +63,7 @@ export const removeHobbyFromUser = async (req: Request, res: Response) => {
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const before = user.hobbies.length;
-    user.hobbies = user.hobbies.filter((h) => h.toLowerCase() !== hobby.trim().toLowerCase());
+    user.hobbies = user.hobbies.filter((h) => (typeof h === "string" ? h.toLowerCase() !== hobby.trim().toLowerCase() : true));
 
     if (user.hobbies.length === before) {
       return res.status(404).json({ message: "Hobby not found in user's list" });
@@ -62,7 +71,9 @@ export const removeHobbyFromUser = async (req: Request, res: Response) => {
 
     await user.save();
 
-    const toUpdate = [user._id, ...(user.friends || [])];
+    // Update popularity for this user and their friends
+    const friendsAsStrings = (user.friends || []).map((f: any) => String(f)).filter(Boolean);
+    const toUpdate = [String(user._id), ...friendsAsStrings];
     await updatePopularityForUsers(toUpdate);
 
     const updated = await User.findById(user._id);
