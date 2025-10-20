@@ -4,7 +4,7 @@ import ReactFlow, { Background, Controls, addEdge, Handle, Position, applyNodeCh
 import type { Node, Edge, Connection, NodeProps } from "react-flow-renderer";
 import axios from "axios";
 import { motion } from "framer-motion";
-import Sidebar from "./Sidebar";
+import Sidebar from "./sidebar";
 import UserPanel from "./UserPanel";
 import CreateUserPanel from "./CreateUserPanel";
 import "./styles.css";
