@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
+import { NodeChange } from "reactflow";
 import ReactFlow, { Background, Controls, addEdge, Handle, Position, applyNodeChanges } from "react-flow-renderer";
 import type { Node, Edge, Connection, NodeProps } from "react-flow-renderer";
 import axios from "axios";
@@ -275,9 +276,10 @@ export default function App() {
     loadGraph();
   }, [loadGraph]);
 
-  const onNodesChange = useCallback((changes) => {
-    setNodes((nds) => applyNodeChanges(changes, nds));
-  }, []);
+const onNodesChange = useCallback((changes: any) => {
+  setNodes((nds) => applyNodeChanges(changes as any, nds));
+}, []);
+
 
   const onNodeClick = (_: any, node: Node) => {
     if (typeof node.id === "string" && (node.id.startsWith("score-high-") || node.id.startsWith("score-low-"))) {
@@ -292,7 +294,7 @@ export default function App() {
     try {
       await axios.post(`/api/users/${source}/link`, { friendId: target });
       setEdges((eds) => addEdge({ id: `e-${source}-${target}`, source, target }, eds));
-      await loadGraph(); // refresh after linking
+      await loadGraph();
     } catch (err: any) {
       alert(err?.response?.data?.message || "Failed to link users");
       console.error(err);
