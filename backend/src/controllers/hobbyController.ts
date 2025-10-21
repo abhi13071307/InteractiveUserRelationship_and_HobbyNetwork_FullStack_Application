@@ -3,6 +3,28 @@ import mongoose from "mongoose";
 import User from "../models/User";
 import { updatePopularityForUsers } from "../services/popularity";
 
+export const getAllHobbies = async (_req: Request, res: Response) => {
+  try {
+    const users = await User.find({}, { hobbies: 1 }).lean();
+    const set = new Set<string>();
+
+    for (const u of users) {
+      if (!u || !Array.isArray((u as any).hobbies)) continue;
+      for (const h of (u as any).hobbies) {
+        if (typeof h !== "string") continue;
+        const v = h.trim().toLowerCase();
+        if (v) set.add(v);
+      }
+    }
+
+    const hobbies = Array.from(set).sort((a, b) => a.localeCompare(b));
+    return res.status(200).json({ hobbies });
+  } catch (err: any) {
+    console.error("getAllHobbies error:", err);
+    return res.status(500).json({ message: "Failed to fetch hobbies", error: err.message });
+  }
+};
+
 export const addHobbyToUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;

@@ -22,8 +22,9 @@ app.use(express.json());
 
 app.use("/api/users", userRoutes);
 app.use("/api/graph", graphRoutes);
-app.get("/api/health", (_, res) => res.json({ status: "ok", time: new Date() }));
 app.use("/api/hobbies", hobbyRoutes); 
+app.get("/api/health", (_, res) => res.json({ status: "ok", time: new Date() }));
+
 
 const start = async () => {
   await connectDB(process.env.MONGO_URI); 
