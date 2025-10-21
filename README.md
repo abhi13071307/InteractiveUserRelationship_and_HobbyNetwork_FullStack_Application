@@ -174,3 +174,11 @@ Watch the full working demo here:
 Google Drive Link: https://drive.google.com/file/d/13pJW_wzc_xGNu9e0S4Pifk5DoAzPyRvW/view?usp=sharing
 
 ---
+
+#Deployment
+
+Check the working of the project online-
+Vercel (frontend): https://interactive-relationship-and-hobbies.vercel.app/
+Render (backend): https://friendship-backend-lllc.onrender.com
+
+---
