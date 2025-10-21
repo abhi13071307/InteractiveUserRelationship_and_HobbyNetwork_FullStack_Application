@@ -22,7 +22,7 @@ app.use(express.json());
 
 app.use("/api/users", userRoutes);
 app.use("/api/graph", graphRoutes);
-app.use("/api/hobbies", hobbyRoutes); // ✅ correct route
+app.use("/api/hobbies", hobbyRoutes); 
 app.get("/api/health", (_, res) => res.json({ status: "ok", time: new Date() }));
 
 const start = async () => {
