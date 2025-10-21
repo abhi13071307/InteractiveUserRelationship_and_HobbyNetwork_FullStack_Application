@@ -1,6 +1,12 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { NodeChange } from "reactflow";
-import ReactFlow, { Background, Controls, addEdge, Handle, Position, applyNodeChanges } from "react-flow-renderer";
+import ReactFlow, {
+  Background,
+  Controls,
+  addEdge,
+  Handle,
+  Position,
+  applyNodeChanges,
+} from "react-flow-renderer";
 import type { Node, Edge, Connection, NodeProps } from "react-flow-renderer";
 import axios from "axios";
 import { motion } from "framer-motion";
@@ -9,9 +15,16 @@ import UserPanel from "./UserPanel";
 import CreateUserPanel from "./CreateUserPanel";
 import "./styles.css";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://friendship-backend-lllc.onrender.com";
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://friendship-backend-lllc.onrender.com";
 
-const UserNodeBase: React.FC<NodeProps & { variant?: "high" | "low" }> = ({ id, data }) => {
+axios.defaults.baseURL = API_BASE;
+
+const UserNodeBase: React.FC<NodeProps & { variant?: "high" | "low" }> = ({
+  id,
+  data,
+}) => {
   const [dragOver, setDragOver] = React.useState(false);
   const tier: "high" | "low" = data?.tier === "high" ? "high" : "low";
 
@@ -28,14 +41,15 @@ const UserNodeBase: React.FC<NodeProps & { variant?: "high" | "low" }> = ({ id, 
     setDragOver(false);
     const hobby = e.dataTransfer.getData("text/plain");
     if (!hobby) return;
+
     try {
-      await axios.put(`${API_BASE}/api/users/${id}/hobby`, { hobby });
-      if (typeof data?.loadGraph === "function") {
-        await data.loadGraph();
-      }
+      await axios.put(`/api/users/${id}/hobby`, { hobby });
+      if (typeof data?.loadGraph === "function") await data.loadGraph();
     } catch (err: any) {
       console.error("Failed to add hobby", err);
-      alert(err?.response?.data?.message || "Failed to add hobby to user");
+      alert(
+        err?.response?.data?.message || "Failed to add hobby to user"
+      );
     }
   };
 
@@ -111,7 +125,6 @@ const UserNode: React.FC<NodeProps> = ({ id, data }) => {
     e.dataTransfer.dropEffect = "copy";
     if (!dragOver) setDragOver(true);
   };
-
   const onDragLeave = () => setDragOver(false);
 
   const onDrop = async (e: React.DragEvent) => {
@@ -119,12 +132,15 @@ const UserNode: React.FC<NodeProps> = ({ id, data }) => {
     setDragOver(false);
     const hobby = e.dataTransfer.getData("text/plain");
     if (!hobby) return;
+
     try {
-      await axios.put(`${API_BASE}/api/users/${id}/hobby`, { hobby });
+      await axios.put(`/api/users/${id}/hobby`, { hobby });
       if (typeof data?.loadGraph === "function") await data.loadGraph();
     } catch (err: any) {
       console.error("Failed to add hobby", err);
-      alert(err?.response?.data?.message || "Failed to add hobby to user");
+      alert(
+        err?.response?.data?.message || "Failed to add hobby to user"
+      );
     }
   };
 
@@ -155,7 +171,17 @@ const UserNode: React.FC<NodeProps> = ({ id, data }) => {
 };
 
 const HighScoreIndicatorNode: React.FC<NodeProps> = () => (
-  <div style={{ width: "100%", height: "100%", position: "relative", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 12 }}>
+  <div
+    style={{
+      width: "100%",
+      height: "100%",
+      position: "relative",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 12,
+    }}
+  >
     <Handle type="target" position={Position.Left} style={{ zIndex: 3 }} />
     <Handle type="source" position={Position.Right} style={{ zIndex: 3 }} />
     <motion.div
@@ -182,7 +208,17 @@ const HighScoreIndicatorNode: React.FC<NodeProps> = () => (
 );
 
 const LowScoreIndicatorNode: React.FC<NodeProps> = () => (
-  <div style={{ width: "100%", height: "100%", position: "relative", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 12 }}>
+  <div
+    style={{
+      width: "100%",
+      height: "100%",
+      position: "relative",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 12,
+    }}
+  >
     <Handle type="target" position={Position.Left} style={{ zIndex: 3 }} />
     <Handle type="source" position={Position.Right} style={{ zIndex: 3 }} />
     <motion.div
@@ -208,7 +244,11 @@ const LowScoreIndicatorNode: React.FC<NodeProps> = () => (
   </div>
 );
 
-const nodeTypes = { userNode: UserNode, highScoreNode: HighScoreIndicatorNode, lowScoreNode: LowScoreIndicatorNode };
+const nodeTypes = {
+  userNode: UserNode,
+  highScoreNode: HighScoreIndicatorNode,
+  lowScoreNode: LowScoreIndicatorNode,
+};
 
 type GraphNode = { id: string; label: string; popularityScore: number };
 type GraphEdge = { source: string; target: string };
@@ -231,7 +271,7 @@ export default function App() {
   const loadGraph = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${API_BASE}/api/graph`);
+      const res = await axios.get(`/api/graph`);
       const data = res.data;
 
       const mappedNodes: Node[] = data.nodes.map((n: GraphNode, idx: number) => {
@@ -246,7 +286,11 @@ export default function App() {
           type: "userNode",
           data: { label: n.label, loadGraph, pop },
           draggable: true,
-          position: positionsRef.current[n.id] ?? { x: (idx % 5) * 220 + 50, y: Math.floor(idx / 5) * 160 + 50 },
+          position:
+            positionsRef.current[n.id] ?? {
+              x: (idx % 5) * 220 + 50,
+              y: Math.floor(idx / 5) * 160 + 50,
+            },
           style: {
             background,
             width,
@@ -276,8 +320,17 @@ export default function App() {
         const badgeType = isHigh ? "highScoreNode" : "lowScoreNode";
         const baseW = (u.style as any)?.width ?? 160;
         const offsetX = baseW + 60;
-        const targetPos = positionsRef.current[badgeId] ?? { x: (u.position as any).x + offsetX, y: (u.position as any).y };
-        return { id: badgeId, type: badgeType, data: {}, position: targetPos, draggable: true, style: { width: 135, height: 42 } } as Node;
+        const targetPos =
+          positionsRef.current[badgeId] ??
+          { x: (u.position as any).x + offsetX, y: (u.position as any).y };
+        return {
+          id: badgeId,
+          type: badgeType,
+          data: {},
+          position: targetPos,
+          draggable: true,
+          style: { width: 135, height: 42 },
+        } as Node;
       });
 
       const scoreEdges: Edge[] = mappedNodes.map((u) => {
@@ -306,7 +359,11 @@ export default function App() {
   }, []);
 
   const onNodeClick = (_: any, node: Node) => {
-    if (typeof node.id === "string" && (node.id.startsWith("score-high-") || node.id.startsWith("score-low-"))) return;
+    if (
+      typeof node.id === "string" &&
+      (node.id.startsWith("score-high-") || node.id.startsWith("score-low-"))
+    )
+      return;
     setSelectedUserId(node.id);
   };
 
@@ -314,8 +371,10 @@ export default function App() {
     const { source, target } = connection;
     if (!source || !target) return;
     try {
-      await axios.post(`${API_BASE}/api/users/${source}/link`, { friendId: target });
-      setEdges((eds) => addEdge({ id: `e-${source}-${target}`, source, target }, eds));
+      await axios.post(`/api/users/${source}/link`, { friendId: target });
+      setEdges((eds) =>
+        addEdge({ id: `e-${source}-${target}`, source, target }, eds)
+      );
       await loadGraph();
     } catch (err: any) {
       alert(err?.response?.data?.message || "Failed to link users");
@@ -335,15 +394,32 @@ export default function App() {
         {loading ? (
           <div style={{ padding: 20 }}>Loading graph...</div>
         ) : (
-          <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} onNodesChange={onNodesChange} onNodeClick={onNodeClick} onConnect={onConnect} fitView>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            onNodesChange={onNodesChange}
+            onNodeClick={onNodeClick}
+            onConnect={onConnect}
+            fitView
+          >
             <Background color="#aaa" gap={16} />
             <Controls />
           </ReactFlow>
         )}
       </div>
 
-      <UserPanel userId={selectedUserId} onClose={() => setSelectedUserId(null)} onSaved={loadGraph} />
-      {creating && <CreateUserPanel onClose={() => setCreating(false)} onCreated={loadGraph} />}
+      <UserPanel
+        userId={selectedUserId}
+        onClose={() => setSelectedUserId(null)}
+        onSaved={loadGraph}
+      />
+      {creating && (
+        <CreateUserPanel
+          onClose={() => setCreating(false)}
+          onCreated={loadGraph}
+        />
+      )}
     </div>
   );
 }
