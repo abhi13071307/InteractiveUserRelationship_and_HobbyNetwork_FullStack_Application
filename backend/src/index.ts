@@ -1,4 +1,4 @@
-imimport express from "express";
+import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import connectDB from "./config/db";
@@ -22,11 +22,11 @@ app.use(express.json());
 
 app.use("/api/users", userRoutes);
 app.use("/api/graph", graphRoutes);
-app.use("/api/hobbies", hobbyRoutes); 
 app.get("/api/health", (_, res) => res.json({ status: "ok", time: new Date() }));
+app.use("/api/hobbies", hobbyRoutes); 
 
 const start = async () => {
-  await connectDB(process.env.MONGO_URI);
+  await connectDB(process.env.MONGO_URI); 
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
     console.log(`Backend running on http://localhost:${PORT}`);
@@ -37,3 +37,4 @@ start().catch((err) => {
   console.error("Failed to start server:", err);
   process.exit(1);
 });
+
